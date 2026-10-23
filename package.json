@@ -1,0 +1,35 @@
+{
+	"name": "multiexo",
+	"version": "1.0.0",
+	"description": "User-friendly CLI application designed to manage multiple Exodus Wallets",
+	"license": "MIT",
+	"type": "module",
+	"bin": {
+		"multiexo": "source/cli.js"
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"files": [
+		"source"
+	],
+	"keywords": [
+		"exodus",
+		"wallet",
+		"cli",
+		"ink",
+		"crypto"
+	],
+	"scripts": {
+		"start": "node source/cli.js"
+	},
+	"dependencies": {
+		"ink": "^8.0.0",
+		"ink-gradient": "^4.0.1",
+		"ink-select-input": "^6.2.0",
+		"ink-spinner": "^5.0.0",
+		"ink-text-input": "^6.0.0",
+		"meow": "^14.1.0",
+		"react": "^19.3.1"
+	}
+}
