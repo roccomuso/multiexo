@@ -9,16 +9,30 @@ of sharing the default profile.
 ```
 multiexo · wallets in /Users/you
 
-11 wallets found, most recently used first:
+11 wallets, most recently used first:
 
 ❯ exodus-savings · 2 hours ago
   exodus-daily · 3 days ago
-  exodus-testing (empty) · just now
-  + Create a new wallet
-  Quit
+  exodus-testing (empty) · created just now
+  …
 
-↑↓ to move · enter to start · q to quit
+↑↓ move   ⏎ start   1-9 start by number   n new wallet   q quit
 ```
+
+The list holds wallets and nothing else; the commands live in the footer:
+
+| Key | Does |
+| --- | --- |
+| `↑` `↓` | Move through the wallets |
+| `⏎` | Start the highlighted wallet |
+| `1`…`9` | Start the wallet on that row, without moving first |
+| `n` | Create a new wallet |
+| `q` or `esc` | Quit |
+
+The digits count rows on screen, so when the list is long enough to scroll they
+follow what you can see rather than the wallet's position in the full list. The
+footer shows the range that is actually live (`1-3` with three wallets), and
+drops it when there is only one wallet.
 
 ## Install
 
@@ -49,8 +63,8 @@ multiexo exits:
 
 ### Creating a wallet
 
-Choose **+ Create a new wallet**, type a name, and multiexo shows the absolute
-path it is about to create and asks for confirmation before writing anything.
+Press `n`, type a name, and multiexo shows the absolute path it is about to
+create and asks for confirmation before writing anything.
 The folder is created inside the same directory it lists (your home directory,
 or whatever `--dir` points at). Exodus sets the wallet up — new seed or restore
 from a recovery phrase — the first time it starts.
@@ -73,7 +87,10 @@ Only directories that look like Exodus data folders are listed: those holding
 an `exodus.wallet` folder or an `exodus.conf.json` file, plus folders multiexo
 created itself (marked with a `.multiexo.json` file, so a wallet appears in the
 list even before Exodus has run in it — those show up as `(empty)`). Everything
-else in the directory is ignored. The list is ordered by last use.
+else in the directory is ignored.
+
+The list is ordered by last use, taken from the `exodus.wallet` folder's
+timestamp, which Exodus rewrites on every sync.
 
 ## Development
 
