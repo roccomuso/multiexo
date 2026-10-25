@@ -21,8 +21,20 @@ import {
 	walletPathFor,
 } from './wallets.js';
 
-const CREATE_ACTION = Symbol('create');
-const QUIT_ACTION = Symbol('quit');
+// Commands shown in the footer as "key label" pairs, not as list entries.
+const EMPTY_COMMANDS = [
+	['n', 'new wallet'],
+	['q', 'quit'],
+];
+const NAME_COMMANDS = [
+	['⏎', 'continue'],
+	['esc', 'back'],
+];
+const CONFIRM_COMMANDS = [
+	['↑↓', 'move'],
+	['⏎', 'choose'],
+	['esc', 'back'],
+];
 
 function Header({baseDir, binary}) {
 	return h(
@@ -45,20 +57,35 @@ function Header({baseDir, binary}) {
 	);
 }
 
-function Hint({children}) {
-	return h(Box, {marginTop: 1}, h(Text, {dimColor: true}, children));
+function Footer({commands, note}) {
+	const row = commands.flatMap(([key, label], index) => [
+		index > 0
+			? h(Text, {key: `gap-${key}`, dimColor: true}, '   ')
+			: undefined,
+		h(Text, {key: `key-${key}`, color: 'cyan'}, key),
+		h(Text, {key: `label-${key}`, dimColor: true}, ` ${label}`),
+	]);
+
+	return h(
+		Box,
+		{flexDirection: 'column', marginTop: 1},
+		note ? h(Text, {dimColor: true}, note) : undefined,
+		h(Text, null, ...row),
+	);
 }
 
 function WalletItem({isSelected, label, value}) {
-	const isWallet = value !== CREATE_ACTION && value !== QUIT_ACTION;
+	const when = relativeTime(value.modifiedAt);
 
 	return h(
 		Text,
 		{color: isSelected ? 'cyan' : undefined},
 		label,
-		isWallet
-			? h(Text, {dimColor: true}, ` · ${relativeTime(value.modifiedAt)}`)
-			: undefined,
+		h(
+			Text,
+			{dimColor: true},
+			` · ${value.initialized ? when : `created ${when}`}`,
+		),
 	);
 }
 
@@ -98,28 +125,38 @@ export default function App({baseDir, binary, binaryError}) {
 	}, [screen, exit]);
 
 	// Keep the whole frame inside the window: a list taller than the terminal
-	// would scroll the header and the hint out of view. The subtracted lines are
-	// the header, the counter, the margins, the two actions and the hint.
-	const listLimit = Math.max(3, rows - 9);
+	// would scroll the header and the footer out of view. The subtracted lines
+	// are the header, the counter, the margins, the footer and a spare row for
+	// the shell prompt, plus the warning line when Exodus is missing.
+	const listLimit = Math.max(3, rows - (binary ? 8 : 9));
 
-	const items = useMemo(() => {
-		const walletItems = wallets.map(wallet => ({
-			key: wallet.path,
-			label: wallet.initialized ? wallet.name : `${wallet.name} (empty)`,
-			value: wallet,
-		}));
+	const items = useMemo(
+		() =>
+			wallets.map(wallet => ({
+				key: wallet.path,
+				label: wallet.initialized ? wallet.name : `${wallet.name} (empty)`,
+				value: wallet,
+			})),
+		[wallets],
+	);
 
-		return [
-			...walletItems,
-			{key: 'create', label: '+ Create a new wallet', value: CREATE_ACTION},
-			{key: 'quit', label: 'Quit', value: QUIT_ACTION},
-		];
-	}, [wallets]);
+	const startCreating = useCallback(() => {
+		setDraftName('');
+		setNameError(undefined);
+		setScreen('name');
+	}, []);
 
 	useInput((input, key) => {
-		if (screen === 'menu' && (input === 'q' || key.escape)) {
-			exit();
-			return;
+		if (screen === 'menu') {
+			if (input === 'q' || key.escape) {
+				exit();
+				return;
+			}
+
+			if (input === 'n') {
+				startCreating();
+				return;
+			}
 		}
 
 		if ((screen === 'name' || screen === 'confirm') && key.escape) {
@@ -130,15 +167,7 @@ export default function App({baseDir, binary, binaryError}) {
 
 	const handleMenuSelect = useCallback(
 		item => {
-			if (item.value === QUIT_ACTION) {
-				exit();
-				return;
-			}
-
-			if (item.value === CREATE_ACTION) {
-				setDraftName('');
-				setNameError(undefined);
-				setScreen('name');
+			if (!item) {
 				return;
 			}
 
@@ -150,7 +179,7 @@ export default function App({baseDir, binary, binaryError}) {
 
 			void start(item.value);
 		},
-		[binary, binaryError, exit, start],
+		[binary, binaryError, start],
 	);
 
 	const handleNameSubmit = useCallback(
@@ -260,7 +289,10 @@ export default function App({baseDir, binary, binaryError}) {
 				{marginTop: 1},
 				h(SelectInput, {items: choices, onSelect: handleConfirm}),
 			),
-			h(Hint, null, 'Exodus will set the wallet up the first time it starts.'),
+			h(Footer, {
+				commands: CONFIRM_COMMANDS,
+				note: 'Exodus will set the wallet up the first time it starts.',
+			}),
 		);
 	}
 
@@ -286,25 +318,40 @@ export default function App({baseDir, binary, binaryError}) {
 			nameError
 				? h(Box, {marginTop: 1}, h(Text, {color: 'red'}, nameError))
 				: undefined,
-			h(Hint, null, 'enter to continue · esc to go back'),
+			h(Footer, {commands: NAME_COMMANDS}),
 		);
 	}
+
+	if (wallets.length === 0) {
+		return h(
+			Box,
+			{flexDirection: 'column'},
+			h(Header, {baseDir, binary}),
+			h(Text, {dimColor: true}, 'No wallet here yet.'),
+			h(Footer, {commands: EMPTY_COMMANDS}),
+		);
+	}
+
+	// A digit starts the wallet on that visible row, so the range covers the
+	// rows actually on screen rather than every wallet found.
+	const numbered = Math.min(9, listLimit, wallets.length);
+	const menuCommands = [
+		['↑↓', 'move'],
+		['⏎', 'start'],
+		...(numbered > 1 ? [[`1-${numbered}`, 'start by number']] : []),
+		['n', 'new wallet'],
+		['q', 'quit'],
+	];
 
 	return h(
 		Box,
 		{flexDirection: 'column'},
 		h(Header, {baseDir, binary}),
-		wallets.length === 0
-			? h(
-					Text,
-					{dimColor: true},
-					'No wallet found here yet — create your first one.',
-				)
-			: h(
-					Text,
-					{dimColor: true},
-					`${wallets.length} wallet${wallets.length === 1 ? '' : 's'} found, most recently used first:`,
-				),
+		h(
+			Text,
+			{dimColor: true},
+			`${wallets.length} wallet${wallets.length === 1 ? '' : 's'}, most recently used first:`,
+		),
 		h(
 			Box,
 			{marginTop: 1},
@@ -315,6 +362,6 @@ export default function App({baseDir, binary, binaryError}) {
 				itemComponent: WalletItem,
 			}),
 		),
-		h(Hint, null, '↑↓ to move · enter to start · q to quit'),
+		h(Footer, {commands: menuCommands}),
 	);
 }

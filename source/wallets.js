@@ -5,7 +5,8 @@ import path from 'node:path';
 // A data folder is considered an Exodus wallet when it contains one of these.
 // `exodus.wallet` and `exodus.conf.json` are created by Exodus itself, while
 // `.multiexo.json` marks a folder we created but that Exodus never opened yet.
-const WALLET_MARKERS = ['exodus.wallet', 'exodus.conf.json'];
+const WALLET_DATA_DIR = 'exodus.wallet';
+const WALLET_CONFIG_FILE = 'exodus.conf.json';
 const MULTIEXO_MARKER = '.multiexo.json';
 
 export function expandHome(target) {
@@ -35,9 +36,10 @@ function readMarker(walletPath) {
 function describeWallet(baseDir, name) {
 	const walletPath = path.join(baseDir, name);
 	const marker = readMarker(walletPath);
-	const hasExodusData = WALLET_MARKERS.some(file =>
-		fs.existsSync(path.join(walletPath, file)),
-	);
+	const dataPath = path.join(walletPath, WALLET_DATA_DIR);
+	const hasWalletData = fs.existsSync(dataPath);
+	const hasExodusData =
+		hasWalletData || fs.existsSync(path.join(walletPath, WALLET_CONFIG_FILE));
 
 	if (!hasExodusData && !marker) {
 		return undefined;
@@ -46,11 +48,8 @@ function describeWallet(baseDir, name) {
 	let modifiedAt;
 	try {
 		// `exodus.wallet` changes on every sync, so it tracks real usage better
-		// than the data folder itself.
-		const target = hasExodusData
-			? path.join(walletPath, 'exodus.wallet')
-			: walletPath;
-		modifiedAt = fs.statSync(target).mtime;
+		// than the folder itself — but it only exists once Exodus has run here.
+		modifiedAt = fs.statSync(hasWalletData ? dataPath : walletPath).mtime;
 	} catch {
 		modifiedAt = undefined;
 	}
