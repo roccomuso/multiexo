@@ -3,6 +3,15 @@
 	"version": "1.0.0",
 	"description": "User-friendly CLI application designed to manage multiple Exodus Wallets",
 	"license": "MIT",
+	"author": "Rocco Musolino",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/roccomuso/multiexo.git"
+	},
+	"homepage": "https://github.com/roccomuso/multiexo#readme",
+	"bugs": {
+		"url": "https://github.com/roccomuso/multiexo/issues"
+	},
 	"type": "module",
 	"bin": {
 		"multiexo": "source/cli.js"

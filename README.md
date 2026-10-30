@@ -44,14 +44,20 @@ funds.
 Then install multiexo:
 
 ```sh
+npm install -g multiexo
+```
+
+Requires Node 22 or newer (tested on 26).
+
+To run it from a clone of this repository instead:
+
+```sh
 npm install
 npm link        # optional, puts `multiexo` on your PATH
 ```
 
 There is no build step: `source/cli.js` is what runs. Without `npm link`, start
 it with `npm start` or `node source/cli.js`.
-
-Requires Node 22 or newer (tested on 26).
 
 ## Usage
 
