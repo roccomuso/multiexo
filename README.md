@@ -36,6 +36,13 @@ drops it when there is only one wallet.
 
 ## Install
 
+multiexo starts Exodus but does not ship it. First install Exodus from the
+official website, [exodus.com](https://www.exodus.com/download/), and only from
+there: wallet software from anywhere else may be a fake built to steal your
+funds.
+
+Then install multiexo:
+
 ```sh
 npm install
 npm link        # optional, puts `multiexo` on your PATH
@@ -80,6 +87,15 @@ from a recovery phrase — the first time it starts.
 
 `--exodus` also accepts an `.app` bundle on macOS, and the `MULTIEXO_EXODUS`
 environment variable does the same job.
+
+## Your keys stay with Exodus
+
+multiexo never reads your private keys, seed phrase or wallet contents, and it
+never connects to the network. It only lists folder names and timestamps, and
+starts Exodus with `--datadir` pointing at the folder you pick. Everything
+inside the wallet is handled by Exodus itself. The only file multiexo writes is
+the `.multiexo.json` marker in the folders it creates, which holds the folder
+name and creation date.
 
 ## How wallets are detected
 
